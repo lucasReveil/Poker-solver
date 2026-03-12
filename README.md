@@ -22,8 +22,9 @@ This repository contains a **production-style foundation** for a deterministic, 
 - Discrete action abstraction.
 - CFR-based approximate equilibrium iteration.
 - Range parsing (`AA`, `AKs`, `AKo`, comma-separated, optional `:weight`).
-- Board card removal and combo-level filtering.
+- Board + private-card removal and combo-level filtering.
 - Showdown and fold utility logic.
+- Street-aware chance nodes for flop/turn runouts to river.
 - JSON export of iteration statistics.
 
 ## Architecture
@@ -72,7 +73,7 @@ The solver prints final iteration metrics and optionally writes JSON export.
 See `examples/river_spot.json`.
 
 Required top-level keys:
-- `board`: 5-card board string (current terminal evaluator path requires river board).
+- `board`: 3-card (flop), 4-card (turn), or 5-card (river) board string.
 - `oop_range`, `ip_range`: range strings.
 - `game`: pot/stack/rake config.
 - `tree`: discrete action-tree configuration.
@@ -82,8 +83,8 @@ Required top-level keys:
 
 1. **Tree compiler scope**: currently compiles a small deterministic template (check/bet/call/fold branches).
    - Tradeoff: high confidence and deterministic behavior now vs broad abstraction coverage.
-2. **Terminal handling**: currently evaluates fully specified 5-card boards only.
-   - Tradeoff: correctness and explicitness over partial-board chance rollout complexity in v1.
+2. **Chance rollout model**: chance nodes enumerate all valid future board cards conditioned on board + both private hands; probabilities are uniform across valid deals.
+   - Tradeoff: correct card-removal behavior and deterministic aggregation over speed (still not abstraction-sampled).
 3. **CFR granularity**: regret tables are node-action level, not information-set compressed.
    - Tradeoff: simpler and auditable MVP at the cost of scalability.
 4. **Performance**: straightforward evaluator and nested range loops.
@@ -107,7 +108,7 @@ Benchmarks cover:
 ## Roadmap
 
 Near-term extensions:
-- Street-aware chance transitions (flop/turn rollout support).
+- Chance-node optimization (memoization and incremental evaluator reuse across runouts).
 - Richer compiled tree from config (multiple bet/raise branches by street).
 - Information-set indexing with per-hand strategy output.
 - Best-response/exploitability approximation.
@@ -118,3 +119,16 @@ Near-term extensions:
 - No RNG is required for the current algorithm path.
 - Iteration order is stable via deterministic data structures and fixed traversal sequence.
 
+
+## Chance Node Model
+
+- The compiled action tree now includes a `Chance` node when solving from flop or turn.
+- Flop solve: chance deals turn, then recursive chance deals river before showdown EV aggregation.
+- Turn solve: chance deals river before showdown EV aggregation.
+- Chance nodes do not update regrets; they return expectation over all valid outcomes.
+
+### Current limitations
+
+- Chance rollout is exact and deterministic, but still brute-force over valid runouts for each private-hand matchup.
+- No chance/outcome sampling yet.
+- No post-turn/river branching after chance in this MVP template tree.

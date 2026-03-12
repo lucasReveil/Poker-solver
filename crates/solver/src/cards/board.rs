@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use super::Card;
+use super::{all_cards, Card};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Board {
@@ -34,6 +34,23 @@ impl Board {
 
     pub fn mask(&self) -> u64 {
         self.mask
+    }
+
+    pub fn with_card(&self, card: Card) -> Result<Self, String> {
+        if self.contains(card) {
+            return Err("board has duplicate card".to_string());
+        }
+        let mut cards = self.cards.clone();
+        cards.push(card);
+        Board::new(cards)
+    }
+
+    pub fn remaining_cards_excluding_mask(&self, excluded_mask: u64) -> Vec<Card> {
+        let dead = self.mask | excluded_mask;
+        all_cards()
+            .into_iter()
+            .filter(|c| dead & (1u64 << c.index()) == 0)
+            .collect()
     }
 }
 

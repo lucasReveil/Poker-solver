@@ -29,6 +29,25 @@ pub enum Street {
     River,
 }
 
+impl Street {
+    pub fn from_board_len(board_cards: usize) -> Result<Self, String> {
+        match board_cards {
+            3 => Ok(Street::Flop),
+            4 => Ok(Street::Turn),
+            5 => Ok(Street::River),
+            _ => Err("board must have 3, 4, or 5 cards".to_string()),
+        }
+    }
+
+    pub fn next(self) -> Option<Self> {
+        match self {
+            Street::Flop => Some(Street::Turn),
+            Street::Turn => Some(Street::River),
+            Street::River => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct PotState {
     pub pot: f64,

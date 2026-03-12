@@ -4,6 +4,7 @@ use anyhow::Context;
 use clap::Parser;
 use poker_solver::{
     cards::Board,
+    game::Street,
     io::{export_json, load_config, StrategyExport},
     ranges::{expand_range, parse_range},
     solver::{solve, SolveInput},
@@ -33,7 +34,10 @@ fn main() -> anyhow::Result<()> {
     let oop_range = oop_range.filter_board(&board);
     let ip_range = ip_range.filter_board(&board);
 
-    let tree = compile_tree(&cfg.tree).map_err(|e| anyhow::anyhow!("invalid action tree: {e}"))?;
+    let street = Street::from_board_len(board.cards().len())
+        .map_err(|e| anyhow::anyhow!("invalid board street: {e}"))?;
+    let tree =
+        compile_tree(&cfg.tree, street).map_err(|e| anyhow::anyhow!("invalid action tree: {e}"))?;
     let result = solve(SolveInput {
         game: cfg.game,
         board,
