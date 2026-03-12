@@ -1,0 +1,29 @@
+{
+  "board": "AhKdQsJc2c",
+  "oop_range": "AA,AKs,AKo,AQs,KQs",
+  "ip_range": "KK,QQ,KQs,KJs,QJs,AKo",
+  "game": {
+    "initial": {
+      "pot": 100.0,
+      "to_call": 0.0,
+      "stack_oop": 100.0,
+      "stack_ip": 100.0
+    },
+    "rake": {
+      "enabled": false,
+      "cap": 0.0,
+      "pct": 0.0
+    }
+  },
+  "tree": {
+    "max_raises_per_street": 1,
+    "allow_allin": true,
+    "bet_sizing": {
+      "flop_bets": [0.5],
+      "turn_bets": [0.75],
+      "river_bets": [1.0],
+      "raises": [2.0]
+    }
+  },
+  "iterations": 200
+}
