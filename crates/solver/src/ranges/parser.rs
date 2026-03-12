@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::sync::OnceLock;
 
 use thiserror::Error;
 
@@ -66,8 +66,8 @@ fn parse_rank(c: char) -> Option<Rank> {
 }
 
 pub fn expand_range(specs: &[RangeSpec]) -> Result<ComboIndex, RangeError> {
-    let deck = all_cards();
-    let mut out: BTreeMap<(usize, usize), f64> = BTreeMap::new();
+    let all_combos = all_canonical_combos();
+    let mut weights = vec![0.0; all_combos.len()];
 
     for spec in specs {
         let chars: Vec<char> = spec.token.chars().collect();
@@ -84,33 +84,49 @@ pub fn expand_range(specs: &[RangeSpec]) -> Result<ComboIndex, RangeError> {
             None
         };
 
-        for (i, c1) in deck.iter().enumerate() {
-            for c2 in deck.iter().skip(i + 1) {
-                let ranks = (c1.rank(), c2.rank());
-                if !((ranks.0 == r1 && ranks.1 == r2) || (ranks.0 == r2 && ranks.1 == r1)) {
-                    continue;
-                }
-                if let Some(flag) = suited_flag {
-                    match flag {
-                        's' | 'S' if c1.suit() != c2.suit() => continue,
-                        'o' | 'O' if c1.suit() == c2.suit() => continue,
-                        _ => {}
-                    }
-                }
-
-                let combo = Combo::new(*c1, *c2).map_err(RangeError::Combo)?;
-                out.insert((combo.c1.index(), combo.c2.index()), spec.weight);
+        for (idx, combo) in all_combos.iter().enumerate() {
+            let c1 = combo.c1;
+            let c2 = combo.c2;
+            let ranks = (c1.rank(), c2.rank());
+            if !((ranks.0 == r1 && ranks.1 == r2) || (ranks.0 == r2 && ranks.1 == r1)) {
+                continue;
             }
+            if let Some(flag) = suited_flag {
+                match flag {
+                    's' | 'S' if c1.suit() != c2.suit() => continue,
+                    'o' | 'O' if c1.suit() == c2.suit() => continue,
+                    _ => {}
+                }
+            }
+
+            weights[idx] = spec.weight;
         }
     }
 
-    let combos = out
-        .into_iter()
-        .map(|((a, b), w)| {
-            let combo = Combo::new(deck[a], deck[b]).unwrap();
-            WeightedCombo { combo, weight: w }
+    let combos = all_combos
+        .iter()
+        .zip(weights)
+        .filter_map(|(combo, weight)| {
+            (weight > 0.0).then_some(WeightedCombo {
+                combo: *combo,
+                weight,
+            })
         })
         .collect();
 
-    Ok(ComboIndex { combos })
+    Ok(ComboIndex::new(combos))
+}
+
+fn all_canonical_combos() -> &'static [Combo] {
+    static ALL: OnceLock<Vec<Combo>> = OnceLock::new();
+    ALL.get_or_init(|| {
+        let deck = all_cards();
+        let mut combos = Vec::with_capacity(1326);
+        for i in 0..deck.len() {
+            for j in (i + 1)..deck.len() {
+                combos.push(Combo::new(deck[i], deck[j]).expect("valid combo"));
+            }
+        }
+        combos
+    })
 }
