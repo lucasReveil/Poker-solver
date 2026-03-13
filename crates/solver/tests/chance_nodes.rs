@@ -69,19 +69,15 @@ fn card_removal_for_future_cards_is_correct() {
 #[test]
 fn flop_traversal_is_deterministic_with_chance_nodes() {
     let board: Board = "AhKdQs".parse().unwrap();
-    let oop = ComboIndex {
-        combos: vec![WeightedCombo {
-            combo: Combo::new("Ac".parse().unwrap(), "Ad".parse().unwrap()).unwrap(),
-            weight: 1.0,
-        }],
-    }
+    let oop = ComboIndex::new(vec![WeightedCombo {
+        combo: Combo::new("Ac".parse().unwrap(), "Ad".parse().unwrap()).unwrap(),
+        weight: 1.0,
+    }])
     .filter_board(&board);
-    let ip = ComboIndex {
-        combos: vec![WeightedCombo {
-            combo: Combo::new("Kh".parse().unwrap(), "Kc".parse().unwrap()).unwrap(),
-            weight: 1.0,
-        }],
-    }
+    let ip = ComboIndex::new(vec![WeightedCombo {
+        combo: Combo::new("Kh".parse().unwrap(), "Kc".parse().unwrap()).unwrap(),
+        weight: 1.0,
+    }])
     .filter_board(&board);
 
     let tree = compile_tree(&test_tree(), Street::Flop).unwrap();
