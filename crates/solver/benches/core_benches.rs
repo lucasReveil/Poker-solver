@@ -1,6 +1,6 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use poker_solver::{
-    game::{PotState, RakeConfig, SolverGame},
+    game::{PotState, RakeConfig, SolverGame, Street},
     ranges::{expand_range, parse_range},
     solver::{solve, SolveInput},
     tree::{compile_tree, ActionTreeConfig, BetSizing},
@@ -26,16 +26,19 @@ fn bench_cfr_iteration(c: &mut Criterion) {
             let ip = expand_range(&parse_range("KK,KQs").unwrap())
                 .unwrap()
                 .filter_board(&board);
-            let tree = compile_tree(&ActionTreeConfig {
-                max_raises_per_street: 1,
-                allow_allin: true,
-                bet_sizing: BetSizing {
-                    flop_bets: vec![0.5],
-                    turn_bets: vec![0.75],
-                    river_bets: vec![1.0],
-                    raises: vec![2.0],
+            let tree = compile_tree(
+                &ActionTreeConfig {
+                    max_raises_per_street: 1,
+                    allow_allin: true,
+                    bet_sizing: BetSizing {
+                        flop_bets: vec![0.5],
+                        turn_bets: vec![0.75],
+                        river_bets: vec![1.0],
+                        raises: vec![2.0],
+                    },
                 },
-            })
+                Street::River,
+            )
             .unwrap();
             let _ = solve(SolveInput {
                 game: SolverGame {

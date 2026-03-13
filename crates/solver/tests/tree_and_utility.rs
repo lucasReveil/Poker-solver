@@ -1,6 +1,6 @@
 use poker_solver::{
     cards::Board,
-    game::{Player, RakeConfig},
+    game::{Player, RakeConfig, Street},
     ranges::{expand_range, parse_range},
     solver::terminal_payoff,
     tree::{compile_tree, ActionTreeConfig, BetSizing, NodeKind},
@@ -8,16 +8,19 @@ use poker_solver::{
 
 #[test]
 fn tree_compile_basic() {
-    let tree = compile_tree(&ActionTreeConfig {
-        max_raises_per_street: 1,
-        allow_allin: true,
-        bet_sizing: BetSizing {
-            flop_bets: vec![0.5],
-            turn_bets: vec![0.75],
-            river_bets: vec![1.0],
-            raises: vec![2.5],
+    let tree = compile_tree(
+        &ActionTreeConfig {
+            max_raises_per_street: 1,
+            allow_allin: true,
+            bet_sizing: BetSizing {
+                flop_bets: vec![0.5],
+                turn_bets: vec![0.75],
+                river_bets: vec![1.0],
+                raises: vec![2.5],
+            },
         },
-    })
+        Street::River,
+    )
     .unwrap();
     assert!(matches!(tree.nodes[0].kind, NodeKind::Action { .. }));
 }
