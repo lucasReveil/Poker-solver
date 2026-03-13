@@ -36,16 +36,33 @@ pub struct WeightedCombo {
 #[derive(Debug, Clone)]
 pub struct ComboIndex {
     pub combos: Vec<WeightedCombo>,
+    pub masks: Vec<u64>,
+    pub weights: Vec<f64>,
 }
 
 impl ComboIndex {
+    pub fn new(combos: Vec<WeightedCombo>) -> Self {
+        let mut masks = Vec::with_capacity(combos.len());
+        let mut weights = Vec::with_capacity(combos.len());
+        for c in &combos {
+            masks.push(c.combo.mask());
+            weights.push(c.weight);
+        }
+        Self {
+            combos,
+            masks,
+            weights,
+        }
+    }
+
     pub fn filter_board(&self, board: &Board) -> Self {
+        let board_mask = board.mask();
         let combos = self
             .combos
             .iter()
             .copied()
-            .filter(|c| !c.combo.conflicts_with_board(board))
+            .filter(|c| c.combo.mask() & board_mask == 0)
             .collect();
-        Self { combos }
+        Self::new(combos)
     }
 }

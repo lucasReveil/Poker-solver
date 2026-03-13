@@ -22,13 +22,22 @@ pub struct SolveResult {
     pub stats: Vec<IterationStats>,
 }
 
-fn regret_matching(regrets: &[f64]) -> Vec<f64> {
-    let positive: Vec<f64> = regrets.iter().map(|r| r.max(0.0)).collect();
-    let s: f64 = positive.iter().sum();
+fn regret_matching(regrets: &[f64], out: &mut Vec<f64>) {
+    out.clear();
+    out.reserve(regrets.len());
+    let mut s = 0.0;
+    for &r in regrets {
+        let p = r.max(0.0);
+        out.push(p);
+        s += p;
+    }
     if s <= 1e-12 {
-        vec![1.0 / regrets.len() as f64; regrets.len()]
+        let uniform = 1.0 / regrets.len() as f64;
+        out.fill(uniform);
     } else {
-        positive.into_iter().map(|p| p / s).collect()
+        for p in out {
+            *p /= s;
+        }
     }
 }
 
@@ -170,7 +179,8 @@ fn cfr(
         NodeKind::Chance { street } => return chance_showdown_ev(input, board, street),
         NodeKind::Action { player } => {
             let r = tables.range(node);
-            let strategy = regret_matching(&tables.regrets[r.clone()]);
+            let mut strategy = Vec::with_capacity(r.len());
+            regret_matching(&tables.regrets[r.clone()], &mut strategy);
             let mut action_utils = vec![0.0; strategy.len()];
             let mut node_util = 0.0;
             for (a, &child) in n.children.iter().enumerate() {
